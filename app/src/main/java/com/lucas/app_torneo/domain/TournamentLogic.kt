@@ -18,7 +18,12 @@ data class StandingRow(
     val pts: Int
 )
 
-fun generateLeagueSchedule(tournamentId: Long, teams: List<TeamEntity>, seed: Long): List<MatchEntity> {
+fun generateLeagueSchedule(
+    tournamentId: Long,
+    teams: List<TeamEntity>,
+    seed: Long,
+    matchesPerPair: Int = 1
+): List<MatchEntity> {
     val shuffled = teams.shuffled(Random(seed)).toMutableList()
     if (shuffled.size % 2 != 0) {
         shuffled.add(TeamEntity(id = -1L, tournamentId = tournamentId, nombreEquipo = "DESCANSA", nombrePersona = "-"))
@@ -29,28 +34,38 @@ fun generateLeagueSchedule(tournamentId: Long, teams: List<TeamEntity>, seed: Lo
     val matches = mutableListOf<MatchEntity>()
     val rotation = shuffled.toMutableList()
 
-    for (r in 0 until rounds) {
-        for (i in 0 until n / 2) {
-            val a = rotation[i]
-            val b = rotation[n - 1 - i]
-            if (a.id != -1L && b.id != -1L) {
-                matches.add(
-                    MatchEntity(
-                        tournamentId = tournamentId,
-                        round = r + 1,
-                        localTeamId = a.id,
-                        visitanteTeamId = b.id,
-                        metadata = "Jornada ${r + 1}"
+    val safeMatchesPerPair = matchesPerPair.coerceAtLeast(1)
+
+    repeat(safeMatchesPerPair) { cycle ->
+        for (r in 0 until rounds) {
+            for (i in 0 until n / 2) {
+                val a = rotation[i]
+                val b = rotation[n - 1 - i]
+                if (a.id != -1L && b.id != -1L) {
+                    val isEvenCycle = cycle % 2 == 1
+                    val local = if (isEvenCycle) b else a
+                    val visitante = if (isEvenCycle) a else b
+                    val roundNumber = (cycle * rounds) + r + 1
+
+                    matches.add(
+                        MatchEntity(
+                            tournamentId = tournamentId,
+                            round = roundNumber,
+                            localTeamId = local.id,
+                            visitanteTeamId = visitante.id,
+                            metadata = "Jornada $roundNumber"
+                        )
                     )
-                )
+                }
             }
+
+            val fixed = rotation.first()
+            val rest = rotation.drop(1).toMutableList()
+            rest.add(0, rest.removeAt(rest.lastIndex))
+            rotation.clear()
+            rotation.add(fixed)
+            rotation.addAll(rest)
         }
-        val fixed = rotation.first()
-        val rest = rotation.drop(1).toMutableList()
-        rest.add(0, rest.removeAt(rest.lastIndex))
-        rotation.clear()
-        rotation.add(fixed)
-        rotation.addAll(rest)
     }
     return matches
 }
