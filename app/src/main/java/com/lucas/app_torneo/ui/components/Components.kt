@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,7 +122,8 @@ fun MatchCard(
 fun BracketView(
     rounds: List<List<MatchEntity>>,
     roundLabels: List<String>,
-    teamName: (Long) -> String
+    teamName: (Long) -> String,
+    winnerName: String?
 ) {
     val scrollState = rememberScrollState()
     val columnWidth = 220.dp
@@ -137,6 +140,7 @@ fun BracketView(
     ) {
         rounds.forEachIndexed { roundIndex, matches ->
             val spacing = verticalGap * (1f + roundIndex * spacingMultiplier)
+            val connectorStep = (matchCardHeight + spacing) / 2
             Column(
                 modifier = Modifier.width(columnWidth),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -147,8 +151,46 @@ fun BracketView(
                     fontWeight = FontWeight.Bold
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
-                    matches.forEach { match ->
-                        BracketMatchBlock(match = match, teamName = teamName, height = matchCardHeight)
+                    matches.forEachIndexed { matchIndex, match ->
+                        BracketMatchBlock(
+                            match = match,
+                            teamName = teamName,
+                            height = matchCardHeight,
+                            drawConnector = roundIndex < rounds.lastIndex,
+                            connectorOffset = connectorStep * matchIndex
+                        )
+                    }
+                }
+            }
+        }
+
+        if (winnerName != null) {
+            Column(
+                modifier = Modifier.width(columnWidth),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Ganador",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    modifier = Modifier
+                        .width(columnWidth)
+                        .height(matchCardHeight)
+                        .clip(RoundedCornerShape(14.dp)),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    tonalElevation = 2.dp,
+                    shadowElevation = 2.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = winnerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
                     }
                 }
             }
@@ -157,7 +199,13 @@ fun BracketView(
 }
 
 @Composable
-private fun BracketMatchBlock(match: MatchEntity, teamName: (Long) -> String, height: Dp) {
+private fun BracketMatchBlock(
+    match: MatchEntity,
+    teamName: (Long) -> String,
+    height: Dp,
+    drawConnector: Boolean,
+    connectorOffset: Dp
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Surface(
             modifier = Modifier
@@ -179,12 +227,23 @@ private fun BracketMatchBlock(match: MatchEntity, teamName: (Long) -> String, he
                 Text(teamName(match.visitanteTeamId), maxLines = 1)
             }
         }
-        Box(
-            modifier = Modifier
-                .width(20.dp)
-                .height(1.dp)
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.7f))
-        )
+
+        if (drawConnector) {
+            val lineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+            Box(
+                modifier = Modifier
+                    .width(42.dp)
+                    .height(height)
+            ) {
+                Canvas(modifier = Modifier.matchParentSize()) {
+                    val middleY = size.height / 2f
+                    val junctionX = size.width * 0.55f
+                    drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(0f, middleY), end = androidx.compose.ui.geometry.Offset(junctionX, middleY), strokeWidth = 3f)
+                    drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(junctionX, middleY), end = androidx.compose.ui.geometry.Offset(junctionX, middleY - connectorOffset.toPx()), strokeWidth = 3f)
+                    drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(junctionX, middleY - connectorOffset.toPx()), end = androidx.compose.ui.geometry.Offset(size.width, middleY - connectorOffset.toPx()), strokeWidth = 3f)
+                }
+            }
+        }
     }
 }
 
