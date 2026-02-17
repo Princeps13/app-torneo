@@ -142,6 +142,7 @@ class TournamentDetailViewModel(
         viewModelScope.launch {
             if (gl < 0 || gv < 0) return@launch
             val tournament = ui.value.tournament ?: return@launch
+            val updatedMatch = match.copy(golesLocal = gl, golesVisitante = gv, jugado = true)
             val winner = if (tournament.tipo == TournamentType.LLAVES) {
                 when {
                     gl > gv -> match.localTeamId
@@ -150,9 +151,12 @@ class TournamentDetailViewModel(
                 }
             } else null
             if (tournament.tipo == TournamentType.LLAVES && winner == null) return@launch
-            matchRepo.updateMatch(match.copy(golesLocal = gl, golesVisitante = gv, jugado = true, ganadorTeamId = winner))
+            matchRepo.updateMatch(updatedMatch.copy(ganadorTeamId = winner))
             if (tournament.tipo == TournamentType.LLAVES) advanceKnockout(tournament)
-            if (tournament.tipo == TournamentType.LIGA && ui.value.matches.all { it.jugado }) {
+            val allPlayedAfterUpdate = ui.value.matches.all { current ->
+                if (current.id == updatedMatch.id) true else current.jugado
+            }
+            if (tournament.tipo == TournamentType.LIGA && allPlayedAfterUpdate) {
                 tournamentRepo.updateStatus(tournament, TournamentStatus.FINALIZADO)
             }
         }
