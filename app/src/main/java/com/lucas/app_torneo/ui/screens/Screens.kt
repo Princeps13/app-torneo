@@ -1,12 +1,13 @@
 package com.lucas.app_torneo.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
+//import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -67,8 +68,10 @@ fun CreateTournamentScreen(vm: CreateTournamentViewModel, onStarted: (Long) -> U
             TextField(value = equipo, onValueChange = { equipo = it }, label = { Text("Nombre del equipo") })
             TextField(value = persona, onValueChange = { persona = it }, label = { Text("Nombre de la persona") })
             Button(onClick = { vm.addTeam(equipo, persona); equipo = ""; persona = "" }) { Text("Agregar equipo") }
-            LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                items(ui.teams) { team -> TeamRow(team = team, onDelete = { vm.deleteTeam(team) }) }
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                LazyColumn {
+                    items(ui.teams) { team -> TeamRow(team = team, onDelete = { vm.deleteTeam(team) }) }
+                }
             }
             Button(onClick = { vm.startTournament(onStarted) }) { Text("Iniciar torneo") }
         }
