@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lucas.app_torneo.data.local.MatchEntity
+import com.lucas.app_torneo.data.local.TournamentStatus
 import com.lucas.app_torneo.data.local.TournamentType
 import com.lucas.app_torneo.ui.components.BracketView
 import com.lucas.app_torneo.ui.components.MatchCard
@@ -153,7 +154,16 @@ fun TournamentDetailScreen(vm: TournamentDetailViewModel) {
                     }
                 }
             }
-            "Tabla" -> StandingsTable(ui.standings)
+            "Tabla" -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StandingsTable(ui.standings)
+                val ganador = ui.standings.firstOrNull()
+                if (ui.tournament?.estado == TournamentStatus.FINALIZADO && ganador != null) {
+                    Text(
+                        text = "🏆 Ganador: ${ganador.team.nombreEquipo} (${ganador.team.nombrePersona}) con ${ganador.pts} pts",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
             "Llaves" -> {
                 val rounds = ui.matches.groupBy { it.round }.toSortedMap().values.toList()
                 BracketView(
