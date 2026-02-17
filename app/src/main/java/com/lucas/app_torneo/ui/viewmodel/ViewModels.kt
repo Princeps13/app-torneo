@@ -38,8 +38,12 @@ data class TournamentDetailUiState(
     val error: String? = null
 )
 
-class HomeViewModel(repo: TournamentRepository) : ViewModel() {
+class HomeViewModel(private val repo: TournamentRepository) : ViewModel() {
     val tournaments = repo.tournamentsFlow().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun deleteTournament(tournament: TournamentEntity) {
+        viewModelScope.launch { repo.deleteTournament(tournament) }
+    }
 }
 
 class CreateTournamentViewModel(

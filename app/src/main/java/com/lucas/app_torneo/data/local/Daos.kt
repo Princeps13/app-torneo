@@ -24,6 +24,9 @@ interface TournamentDao {
 
     @Update
     suspend fun update(tournament: TournamentEntity)
+
+    @Delete
+    suspend fun delete(tournament: TournamentEntity)
 }
 
 @Dao

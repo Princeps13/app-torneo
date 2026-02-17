@@ -57,6 +57,10 @@ class TournamentRepository(
         tournamentDao.update(tournament.copy(estado = status))
     }
 
+    suspend fun deleteTournament(tournament: TournamentEntity) {
+        tournamentDao.delete(tournament)
+    }
+
     suspend fun resetTournament(tournament: TournamentEntity) {
         matchDao.deleteByTournament(tournament.id)
         tournamentDao.update(tournament.copy(estado = TournamentStatus.CONFIGURANDO, seedRandom = 0L))
