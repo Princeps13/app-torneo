@@ -26,6 +26,7 @@ data class CreateTournamentUiState(
     val tipo: TournamentType = TournamentType.LIGA,
     val tournamentId: Long? = null,
     val teams: List<TeamEntity> = emptyList(),
+    val partidosPorCruce: String = "1",
     val error: String? = null
 )
 
@@ -50,6 +51,10 @@ class CreateTournamentViewModel(
 
     fun setNombre(nombre: String) { _ui.value = _ui.value.copy(nombre = nombre, error = null) }
     fun setTipo(tipo: TournamentType) { _ui.value = _ui.value.copy(tipo = tipo, error = null) }
+
+    fun setPartidosPorCruce(value: String) {
+        _ui.value = _ui.value.copy(partidosPorCruce = value.filter(Char::isDigit), error = null)
+    }
 
     fun createTournamentStep() {
         viewModelScope.launch {
@@ -96,7 +101,14 @@ class CreateTournamentViewModel(
             }
             val tournament = tournamentRepo.getTournament(id)
             if (tournament != null) {
-                tournamentRepo.startTournament(tournament, teams)
+                val partidosPorCruce = if (_ui.value.tipo == TournamentType.LIGA) {
+                    _ui.value.partidosPorCruce.toIntOrNull()?.coerceAtLeast(1) ?: run {
+                        _ui.value = _ui.value.copy(error = "Ingresá una cantidad válida de partidos por cruce")
+                        return@launch
+                    }
+                } else 1
+
+                tournamentRepo.startTournament(tournament, teams, partidosPorCruce)
                 onStarted(id)
             }
         }

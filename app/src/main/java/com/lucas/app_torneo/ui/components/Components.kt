@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-//import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -50,43 +53,60 @@ fun MatchCard(
     var gv by remember { mutableStateOf(match.golesVisitante?.toString() ?: "") }
     var winnerLocal by remember { mutableStateOf(true) }
 
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (match.jugado) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        )
+    ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("$localName vs $visitName", style = MaterialTheme.typography.titleMedium)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = gl,
-                    onValueChange = { gl = it.filter(Char::isDigit) },
-                    label = { Text("Goles local") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-                    modifier = Modifier.weight(1f)
+            if (match.jugado) {
+                Text(
+                    text = "Resultado: ${match.golesLocal ?: 0} - ${match.golesVisitante ?: 0}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
-                OutlinedTextField(
-                    value = gv,
-                    onValueChange = { gv = it.filter(Char::isDigit) },
-                    label = { Text("Goles visitante") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            if (gl.isNotBlank() && gv.isNotBlank() && gl == gv) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { winnerLocal = true }) { Text("Gana local") }
-                    Button(onClick = { winnerLocal = false }) { Text("Gana visitante") }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = gl,
+                        onValueChange = { gl = it.filter(Char::isDigit) },
+                        label = { Text("Goles local") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = gv,
+                        onValueChange = { gv = it.filter(Char::isDigit) },
+                        label = { Text("Goles visitante") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+                if (gl.isNotBlank() && gv.isNotBlank() && gl == gv) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { winnerLocal = true }) { Text("Gana local") }
+                        Button(onClick = { winnerLocal = false }) { Text("Gana visitante") }
+                    }
+                }
+                Button(onClick = {
+                    val a = gl.toIntOrNull() ?: return@Button
+                    val b = gv.toIntOrNull() ?: return@Button
+                    onSave(a, b, winnerLocal)
+                }) { Text("Guardar resultado") }
             }
-            Button(onClick = {
-                val a = gl.toIntOrNull() ?: return@Button
-                val b = gv.toIntOrNull() ?: return@Button
-                onSave(a, b, winnerLocal)
-            }) { Text("Guardar resultado") }
         }
     }
 }
@@ -94,68 +114,81 @@ fun MatchCard(
 @Composable
 fun StandingsTable(rows: List<StandingRow>) {
     val scrollState = rememberScrollState()
-    val columns = listOf(
-        "Equipo" to 2.4f,
-        "PJ" to 0.8f,
-        "PG" to 0.8f,
-        "PE" to 0.8f,
-        "PP" to 0.8f,
-        "GF" to 0.9f,
-        "GC" to 0.9f,
-        "DG" to 0.9f,
-        "Pts" to 1f
-    )
+    val teamColumnWidth = 180.dp
+    val statColumnWidth = 56.dp
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(scrollState)
                 .padding(8.dp)
         ) {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    columns.forEach { (title, weight) ->
-                        Text(
-                            text = title,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            textAlign = if (title == "Equipo") TextAlign.Start else TextAlign.Center,
-                            modifier = Modifier.weight(weight)
-                        )
-                    }
+                TableHeaderCell("Equipo", teamColumnWidth, TextAlign.Start)
+                listOf("PJ", "PG", "PE", "PP", "GF", "GC", "DG", "Pts").forEach { title ->
+                    TableHeaderCell(title, statColumnWidth, TextAlign.Center)
                 }
             }
 
             rows.forEachIndexed { index, row ->
                 val rowModifier = if (index % 2 == 0) {
-                    Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                    Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
                 } else {
                     Modifier
                 }
-
                 Row(
-                    modifier = rowModifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 8.dp),
+                    modifier = rowModifier.padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(row.team.nombreEquipo, modifier = Modifier.weight(2.4f), fontWeight = FontWeight.Medium)
-                    Text(row.pj.toString(), modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
-                    Text(row.pg.toString(), modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
-                    Text(row.pe.toString(), modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
-                    Text(row.pp.toString(), modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
-                    Text(row.gf.toString(), modifier = Modifier.weight(0.9f), textAlign = TextAlign.Center)
-                    Text(row.gc.toString(), modifier = Modifier.weight(0.9f), textAlign = TextAlign.Center)
-                    Text(row.dg.toString(), modifier = Modifier.weight(0.9f), textAlign = TextAlign.Center)
-                    Text(row.pts.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                    TableValueCell(row.team.nombreEquipo, teamColumnWidth, TextAlign.Start, FontWeight.Medium)
+                    TableValueCell(row.pj.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.pg.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.pe.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.pp.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.gf.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.gc.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.dg.toString(), statColumnWidth, TextAlign.Center)
+                    TableValueCell(row.pts.toString(), statColumnWidth, TextAlign.Center, FontWeight.Bold)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun TableHeaderCell(text: String, width: androidx.compose.ui.unit.Dp, align: TextAlign) {
+    Text(
+        text = text,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp,
+        textAlign = align,
+        modifier = Modifier.width(width).padding(horizontal = 4.dp)
+    )
+}
+
+@Composable
+private fun TableValueCell(
+    text: String,
+    width: androidx.compose.ui.unit.Dp,
+    align: TextAlign,
+    weight: FontWeight? = null
+) {
+    Text(
+        text = text,
+        textAlign = align,
+        fontWeight = weight,
+        modifier = Modifier.width(width).padding(horizontal = 4.dp)
+    )
 }

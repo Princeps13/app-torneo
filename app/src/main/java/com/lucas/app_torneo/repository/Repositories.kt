@@ -33,14 +33,18 @@ class TournamentRepository(
         )
     }
 
-    suspend fun startTournament(tournament: TournamentEntity, teams: List<TeamEntity>) {
+    suspend fun startTournament(
+        tournament: TournamentEntity,
+        teams: List<TeamEntity>,
+        leagueMatchesPerPair: Int = 1
+    ) {
         val seed = System.currentTimeMillis()
         val randomized = teams.shuffled(kotlin.random.Random(seed))
         randomized.forEachIndexed { index, team -> teamDao.update(team.copy(orden = index + 1)) }
 
         val savedTeams = teamDao.getByTournament(tournament.id)
         val matches = if (tournament.tipo == TournamentType.LIGA) {
-            generateLeagueSchedule(tournament.id, savedTeams, seed)
+            generateLeagueSchedule(tournament.id, savedTeams, seed, leagueMatchesPerPair)
         } else {
             generateKnockoutBracket(tournament.id, savedTeams, seed)
         }

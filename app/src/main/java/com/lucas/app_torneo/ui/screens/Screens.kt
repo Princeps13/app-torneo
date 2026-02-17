@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-//import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -67,6 +67,13 @@ fun CreateTournamentScreen(vm: CreateTournamentViewModel, onStarted: (Long) -> U
             Text("Tipo: ${ui.tipo}")
             TextField(value = equipo, onValueChange = { equipo = it }, label = { Text("Nombre del equipo") })
             TextField(value = persona, onValueChange = { persona = it }, label = { Text("Nombre de la persona") })
+            if (ui.tipo == TournamentType.LIGA) {
+                TextField(
+                    value = ui.partidosPorCruce,
+                    onValueChange = vm::setPartidosPorCruce,
+                    label = { Text("Partidos por cruce") }
+                )
+            }
             Button(onClick = { vm.addTeam(equipo, persona); equipo = ""; persona = "" }) { Text("Agregar equipo") }
             Box(modifier = Modifier.weight(1f, fill = false)) {
                 LazyColumn {

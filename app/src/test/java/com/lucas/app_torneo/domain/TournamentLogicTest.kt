@@ -32,6 +32,16 @@ class TournamentLogicTest {
         assertEquals(6, matches.size)
     }
 
+
+    @Test
+    fun generateLeagueSchedule_multipleMatchesPerPair() {
+        val teams = (1L..4L).map {
+            TeamEntity(id = it, tournamentId = 1, nombreEquipo = "E$it", nombrePersona = "P$it")
+        }
+        val matches = generateLeagueSchedule(1, teams, 123, matchesPerPair = 2)
+        assertEquals(12, matches.size)
+    }
+
     @Test
     fun generateKnockoutBracket_handlesByes() {
         val teams = (1L..6L).map {
