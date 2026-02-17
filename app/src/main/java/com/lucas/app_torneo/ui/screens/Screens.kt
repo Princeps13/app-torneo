@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import com.lucas.app_torneo.ui.viewmodel.TournamentDetailViewModel
 @Composable
 fun HomeScreen(vm: HomeViewModel, onCreate: () -> Unit, onOpenTournament: (Long) -> Unit) {
     val tournaments by vm.tournaments.collectAsStateWithLifecycle()
+    var tournamentToDelete by remember { mutableStateOf<Long?>(null) }
+
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = onCreate) { Text("Crear torneo") }
         if (tournaments.isEmpty()) Text("No hay torneos cargados")
@@ -46,10 +49,32 @@ fun HomeScreen(vm: HomeViewModel, onCreate: () -> Unit, onOpenTournament: (Long)
                     Button(onClick = { onOpenTournament(t.id) }, modifier = Modifier.weight(1f)) {
                         Text("${t.nombre} - ${t.tipo} - ${t.estado}")
                     }
-                    Button(onClick = { vm.deleteTournament(t) }) { Text("Eliminar") }
+                    Button(onClick = { tournamentToDelete = t.id }) { Text("Eliminar") }
                 }
             }
         }
+    }
+
+    val selectedTournament = tournaments.firstOrNull { it.id == tournamentToDelete }
+    if (selectedTournament != null) {
+        AlertDialog(
+            onDismissRequest = { tournamentToDelete = null },
+            title = { Text("Eliminar torneo") },
+            text = { Text("¿Seguro que querés eliminar \"${selectedTournament.nombre}\"? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(onClick = {
+                    vm.deleteTournament(selectedTournament)
+                    tournamentToDelete = null
+                }) {
+                    Text("Sí, eliminar")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { tournamentToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -134,7 +159,8 @@ fun TournamentDetailScreen(vm: TournamentDetailViewModel) {
                 BracketView(
                     rounds = rounds,
                     roundLabels = buildRoundLabels(rounds),
-                    teamName = { teamMap[it]?.nombreEquipo ?: "-" }
+                    teamName = { teamMap[it]?.nombreEquipo ?: "-" },
+                    winnerName = rounds.lastOrNull()?.firstOrNull()?.ganadorTeamId?.let { teamMap[it]?.nombreEquipo }
                 )
             }
         }
