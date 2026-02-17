@@ -62,8 +62,17 @@ class TournamentRepository(
     }
 
     suspend fun resetTournament(tournament: TournamentEntity) {
-        matchDao.deleteByTournament(tournament.id)
-        tournamentDao.update(tournament.copy(estado = TournamentStatus.CONFIGURANDO, seedRandom = 0L))
+        val matches = matchDao.getByTournament(tournament.id)
+        if (matches.isEmpty()) {
+            tournamentDao.update(tournament.copy(estado = TournamentStatus.CONFIGURANDO, seedRandom = 0L))
+            return
+        }
+
+        val resetMatches = matches.map { match ->
+            match.copy(golesLocal = null, golesVisitante = null, jugado = false, ganadorTeamId = null)
+        }
+        matchDao.insertAll(resetMatches)
+        tournamentDao.update(tournament.copy(estado = TournamentStatus.EN_CURSO))
     }
 }
 
