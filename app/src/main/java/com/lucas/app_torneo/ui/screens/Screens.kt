@@ -24,7 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lucas.app_torneo.data.local.MatchEntity
 import com.lucas.app_torneo.data.local.TournamentType
+import com.lucas.app_torneo.ui.components.BracketView
 import com.lucas.app_torneo.ui.components.MatchCard
 import com.lucas.app_torneo.ui.components.StandingsTable
 import com.lucas.app_torneo.ui.components.TeamRow
@@ -40,8 +42,11 @@ fun HomeScreen(vm: HomeViewModel, onCreate: () -> Unit, onOpenTournament: (Long)
         if (tournaments.isEmpty()) Text("No hay torneos cargados")
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(tournaments) { t ->
-                Button(onClick = { onOpenTournament(t.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("${t.nombre} - ${t.tipo} - ${t.estado}")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { onOpenTournament(t.id) }, modifier = Modifier.weight(1f)) {
+                        Text("${t.nombre} - ${t.tipo} - ${t.estado}")
+                    }
+                    Button(onClick = { vm.deleteTournament(t) }) { Text("Eliminar") }
                 }
             }
         }
@@ -124,17 +129,25 @@ fun TournamentDetailScreen(vm: TournamentDetailViewModel) {
                 }
             }
             "Tabla" -> StandingsTable(ui.standings)
-            "Llaves" -> LazyColumn {
-                ui.matches.groupBy { it.round }.forEach { (round, matchesRound) ->
-                    item { Text("Ronda $round") }
-                    items(matchesRound) { m ->
-                        val local = teamMap[m.localTeamId]?.nombreEquipo ?: "-"
-                        val visit = teamMap[m.visitanteTeamId]?.nombreEquipo ?: "-"
-                        Text("$local vs $visit")
-                    }
-                }
+            "Llaves" -> {
+                val rounds = ui.matches.groupBy { it.round }.toSortedMap().values.toList()
+                BracketView(
+                    rounds = rounds,
+                    roundLabels = buildRoundLabels(rounds),
+                    teamName = { teamMap[it]?.nombreEquipo ?: "-" }
+                )
             }
         }
         ui.error?.let { Text(it) }
+    }
+}
+
+private fun buildRoundLabels(rounds: List<List<MatchEntity>>): List<String> {
+    if (rounds.isEmpty()) return emptyList()
+    val canonical = listOf("Final", "Semifinal", "Cuartos", "Octavos")
+    val total = rounds.size
+    return rounds.indices.map { index ->
+        val fromEnd = total - 1 - index
+        canonical.getOrNull(fromEnd) ?: "Ronda ${index + 1}"
     }
 }
